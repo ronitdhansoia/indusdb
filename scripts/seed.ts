@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { User } from "../models/User";
 import { Task } from "../models/Task";
+import { nextPaymentDate } from "../lib/utils";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
@@ -104,6 +105,10 @@ async function main() {
       { title: "Stock audit for refrigerators", assignedTo: employees[2]._id, priority: "low" as const, status: "done" as const, amount: 0, dueDate: onDay(0), completedAt: onDay(0) },
       { title: "Reorder low-stock water purifiers", assignedTo: employees[2]._id, priority: "high" as const, status: "in_progress" as const, amount: 88000, dueDate: onDay(2) },
       { title: "Tally delivery challans for the week", assignedTo: employees[2]._id, priority: "medium" as const, status: "todo" as const, amount: 0, dueDate: onDay(5) },
+
+      // Recurring payments
+      { title: "Monthly salary", description: "Fixed monthly pay.", assignedTo: employees[0]._id, priority: "medium" as const, status: "todo" as const, amount: 32000, recurrence: "monthly" as const, recurrenceDay: 0, dueDate: nextPaymentDate("monthly", 0) },
+      { title: "Weekly delivery incentive", assignedTo: employees[1]._id, priority: "low" as const, status: "todo" as const, amount: 1500, recurrence: "weekly" as const, recurrenceDay: 6, dueDate: nextPaymentDate("weekly", 6) },
     ];
     await Task.create(sample.map((s) => ({ ...s, assignedBy: admin._id })));
     console.log(`✔ Created ${sample.length} sample tasks (spread Mon–Sat, with amounts)`);

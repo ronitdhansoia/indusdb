@@ -1,10 +1,16 @@
 "use client";
 
 import type { TaskDTO, TaskStatus } from "@/lib/types";
-import { cn, relativeDue, formatMoney, PRIORITY_META } from "@/lib/utils";
+import {
+  cn,
+  relativeDue,
+  formatMoney,
+  describeRecurrence,
+  PRIORITY_META,
+} from "@/lib/utils";
 import { Avatar, Badge } from "./ui";
 import { StatusControl } from "./StatusControl";
-import { Calendar, Flag, Pencil, Trash } from "./icons";
+import { Calendar, Flag, Pencil, Trash, Repeat } from "./icons";
 
 const priorityBar: Record<string, string> = {
   low: "bg-todo",
@@ -103,6 +109,16 @@ export function TaskCard({
 
           {task.amount > 0 && (
             <Badge tone="accent">{formatMoney(task.amount)}</Badge>
+          )}
+
+          {task.recurrence !== "none" && (
+            <span
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-accent"
+              title={describeRecurrence(task.recurrence, task.recurrenceDay)}
+            >
+              <Repeat className="h-3.5 w-3.5" />
+              {task.recurrence === "monthly" ? "Monthly" : "Weekly"}
+            </span>
           )}
 
           {showAssignee && task.assignedTo && (
