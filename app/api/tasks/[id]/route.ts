@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
 import { User } from "@/models/User";
 import { requireAuth } from "@/lib/guards";
+import { nextPaymentDate, normalizeRecurrence } from "@/lib/utils";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -29,6 +30,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const prevStatus = task.status;
+
     // Status update (allowed for both admin and owning employee)
     if (typeof body.status === "string") {
       if (!["todo", "in_progress", "done"].includes(body.status)) {
@@ -53,6 +56,16 @@ export async function PATCH(req: Request, { params }: Ctx) {
         const n = Number(body.amount);
         task.amount = Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
       }
+      if (body.recurrence !== undefined) {
+        const rec = normalizeRecurrence(body.recurrence, body.recurrenceDay);
+        task.recurrence = rec.recurrence;
+        task.recurrenceDay = rec.recurrenceDay;
+        // Re-anchor the due date to the next pay date when recurrence is set,
+        // unless the admin passed an explicit dueDate in the same request.
+        if (rec.recurrence !== "none" && body.dueDate === undefined) {
+          task.dueDate = nextPaymentDate(rec.recurrence, rec.recurrenceDay);
+        }
+      }
       if (body.dueDate !== undefined) {
         task.dueDate = body.dueDate ? new Date(body.dueDate) : null;
       }
@@ -72,6 +85,34 @@ export async function PATCH(req: Request, { params }: Ctx) {
     }
 
     await task.save();
+
+    // Recurring payment: when it's marked done (paid), spawn the next
+    // occurrence for the following period so the schedule keeps going.
+    let spawnedNext = false;
+    if (
+      task.recurrence &&
+      task.recurrence !== "none" &&
+      task.status === "done" &&
+      prevStatus !== "done"
+    ) {
+      const from = task.dueDate ? new Date(task.dueDate) : new Date();
+      from.setDate(from.getDate() + 1); // move past the paid period
+      const next = nextPaymentDate(task.recurrence, task.recurrenceDay, from);
+      await Task.create({
+        title: task.title,
+        description: task.description,
+        status: "todo",
+        priority: task.priority,
+        amount: task.amount,
+        recurrence: task.recurrence,
+        recurrenceDay: task.recurrenceDay,
+        assignedTo: task.assignedTo,
+        assignedBy: task.assignedBy,
+        dueDate: next,
+      });
+      spawnedNext = true;
+    }
+
     const populated = await Task.findById(task._id)
       .populate("assignedTo", "name")
       .lean();
@@ -83,6 +124,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
       status: string;
       priority: string;
       amount?: number;
+      recurrence?: string;
+      recurrenceDay?: number;
       assignedTo?: { _id: unknown; name: string } | null;
       dueDate?: Date | null;
       completedAt?: Date | null;
@@ -91,6 +134,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
     };
 
     return NextResponse.json({
+      spawnedNext,
       task: {
         id: String(t._id),
         title: t.title,
@@ -98,6 +142,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
         status: t.status,
         priority: t.priority,
         amount: t.amount ?? 0,
+        recurrence: t.recurrence ?? "none",
+        recurrenceDay: t.recurrenceDay ?? 0,
         assignedTo: t.assignedTo
           ? { id: String(t.assignedTo._id), name: t.assignedTo.name }
           : null,

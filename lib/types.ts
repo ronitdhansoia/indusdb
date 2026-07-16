@@ -1,5 +1,6 @@
 export type TaskStatus = "todo" | "in_progress" | "done";
 export type TaskPriority = "low" | "medium" | "high";
+export type Recurrence = "none" | "weekly" | "monthly";
 
 export interface EmployeeRef {
   id: string;
@@ -13,6 +14,8 @@ export interface TaskDTO {
   status: TaskStatus;
   priority: TaskPriority;
   amount: number;
+  recurrence: Recurrence;
+  recurrenceDay: number;
   assignedTo: EmployeeRef | null;
   dueDate: string | null;
   completedAt: string | null;

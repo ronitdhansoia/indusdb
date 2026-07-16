@@ -115,6 +115,83 @@ export function relativeDue(input: string | Date | null | undefined): {
   return { label: formatDate(due), tone: "normal" };
 }
 
+/* ----------------------------- recurring pay ------------------------------ */
+export type Recurrence = "none" | "weekly" | "monthly";
+
+// recurrenceDay encoding:
+//   monthly: 0 = last day (end of month); 1..28 = that day of the month
+//   weekly:  1..6 = Mon..Sat (matches Date.getDay(); Sunday is the off day)
+
+function lastDayOfMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+/** The next date a recurring payment is due, on or after `from`. */
+export function nextPaymentDate(
+  recurrence: Recurrence,
+  recurrenceDay: number,
+  from: Date = new Date()
+): Date | null {
+  const base = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+
+  if (recurrence === "monthly") {
+    const target = (y: number, m: number) => {
+      if (recurrenceDay === 0) return new Date(y, m, lastDayOfMonth(y, m));
+      return new Date(y, m, Math.min(recurrenceDay, lastDayOfMonth(y, m)));
+    };
+    let d = target(base.getFullYear(), base.getMonth());
+    if (d < base) d = target(base.getFullYear(), base.getMonth() + 1);
+    return d;
+  }
+
+  if (recurrence === "weekly") {
+    const d = new Date(base);
+    const add = ((recurrenceDay - d.getDay()) % 7 + 7) % 7;
+    d.setDate(d.getDate() + add);
+    return d;
+  }
+
+  return null;
+}
+
+/** Validate/normalize recurrence inputs into a {recurrence, recurrenceDay} pair. */
+export function normalizeRecurrence(
+  recurrence: unknown,
+  recurrenceDay: unknown
+): { recurrence: Recurrence; recurrenceDay: number } {
+  const r: Recurrence =
+    recurrence === "weekly" || recurrence === "monthly" ? recurrence : "none";
+  let day = Number(recurrenceDay);
+  if (!Number.isInteger(day)) day = 0;
+  if (r === "monthly") day = Math.max(0, Math.min(28, day)); // 0 = end of month
+  else if (r === "weekly") day = Math.max(1, Math.min(6, day || 5)); // Mon-Sat
+  else day = 0;
+  return { recurrence: r, recurrenceDay: day };
+}
+
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+/** Human description of a recurrence, e.g. "Monthly, end of month". */
+export function describeRecurrence(
+  recurrence: Recurrence,
+  recurrenceDay: number
+): string {
+  if (recurrence === "monthly") {
+    return recurrenceDay === 0
+      ? "Monthly, end of month"
+      : `Monthly, on the ${ordinal(recurrenceDay)}`;
+  }
+  if (recurrence === "weekly") {
+    const name = WEEKDAY_LONG[(recurrenceDay - 1 + 7) % 7] ?? "Friday";
+    return `Weekly, ${name}`;
+  }
+  return "";
+}
+
 export const STATUS_META = {
   todo: { label: "To do", color: "todo" },
   in_progress: { label: "In progress", color: "progress" },

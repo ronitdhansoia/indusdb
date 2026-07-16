@@ -2,6 +2,7 @@ import mongoose, { Schema, model, models, type Model } from "mongoose";
 
 export type TaskStatus = "todo" | "in_progress" | "done";
 export type TaskPriority = "low" | "medium" | "high";
+export type Recurrence = "none" | "weekly" | "monthly";
 
 export interface ITask {
   _id: mongoose.Types.ObjectId;
@@ -10,6 +11,8 @@ export interface ITask {
   status: TaskStatus;
   priority: TaskPriority;
   amount: number; // money associated with the task (₹)
+  recurrence: Recurrence; // recurring payment schedule
+  recurrenceDay: number; // monthly: 0 = end of month, 1-28 = day; weekly: 1-6 = Mon-Sat
   assignedTo: mongoose.Types.ObjectId; // employee
   assignedBy: mongoose.Types.ObjectId; // admin
   dueDate?: Date | null;
@@ -35,6 +38,12 @@ const TaskSchema = new Schema<ITask>(
       required: true,
     },
     amount: { type: Number, default: 0, min: 0 },
+    recurrence: {
+      type: String,
+      enum: ["none", "weekly", "monthly"],
+      default: "none",
+    },
+    recurrenceDay: { type: Number, default: 0 },
     assignedTo: {
       type: Schema.Types.ObjectId,
       ref: "User",

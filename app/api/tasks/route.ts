@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
 import { User } from "@/models/User";
 import { requireAuth, requireAdmin } from "@/lib/guards";
+import { nextPaymentDate, normalizeRecurrence, type Recurrence } from "@/lib/utils";
 
 type LeanTask = {
   _id: mongoose.Types.ObjectId;
@@ -12,6 +13,8 @@ type LeanTask = {
   status: string;
   priority: string;
   amount?: number;
+  recurrence?: string;
+  recurrenceDay?: number;
   assignedTo?: { _id: mongoose.Types.ObjectId; name: string } | null;
   dueDate?: Date | null;
   completedAt?: Date | null;
@@ -27,6 +30,8 @@ function serializeTask(t: LeanTask) {
     status: t.status,
     priority: t.priority,
     amount: t.amount ?? 0,
+    recurrence: (t.recurrence ?? "none") as Recurrence,
+    recurrenceDay: t.recurrenceDay ?? 0,
     assignedTo: t.assignedTo
       ? { id: String(t.assignedTo._id), name: t.assignedTo.name }
       : null,
@@ -36,6 +41,7 @@ function serializeTask(t: LeanTask) {
     updatedAt: t.updatedAt,
   };
 }
+
 
 /** Coerce a request value into a non-negative money amount. */
 function parseAmount(v: unknown): number {
@@ -80,8 +86,16 @@ export async function POST(req: Request) {
   const { session } = auth;
 
   try {
-    const { title, description, assignedTo, priority, dueDate, amount } =
-      await req.json();
+    const {
+      title,
+      description,
+      assignedTo,
+      priority,
+      dueDate,
+      amount,
+      recurrence,
+      recurrenceDay,
+    } = await req.json();
 
     if (!title || !assignedTo) {
       return NextResponse.json(
@@ -99,6 +113,16 @@ export async function POST(req: Request) {
       );
     }
 
+    const rec = normalizeRecurrence(recurrence, recurrenceDay);
+    // For recurring payments, land the task on its next pay date so it shows
+    // up in the daily/weekly tracker on the right day.
+    const resolvedDue =
+      rec.recurrence !== "none"
+        ? nextPaymentDate(rec.recurrence, rec.recurrenceDay)
+        : dueDate
+          ? new Date(dueDate)
+          : null;
+
     const task = await Task.create({
       title: String(title).trim(),
       description: description ? String(description).trim() : undefined,
@@ -106,7 +130,9 @@ export async function POST(req: Request) {
       assignedBy: session.sub,
       priority: ["low", "medium", "high"].includes(priority) ? priority : "medium",
       amount: parseAmount(amount),
-      dueDate: dueDate ? new Date(dueDate) : null,
+      recurrence: rec.recurrence,
+      recurrenceDay: rec.recurrenceDay,
+      dueDate: resolvedDue,
     });
 
     const populated = await Task.findById(task._id)
