@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api-client";
-import type { EmployeeDTO, TaskDTO, TaskStatus, TaskPriority } from "@/lib/types";
+import type {
+  EmployeeDTO,
+  TaskDTO,
+  TaskStatus,
+  TaskPriority,
+  Recurrence,
+} from "@/lib/types";
 import { PageHeader } from "@/components/PageHeader";
 import {
   Button,
@@ -16,7 +22,14 @@ import {
 } from "@/components/ui";
 import { TaskCard } from "@/components/TaskCard";
 import { Plus, Tasks as TasksIcon } from "@/components/icons";
-import { cn, isSunday } from "@/lib/utils";
+import {
+  cn,
+  isSunday,
+  nextPaymentDate,
+  describeRecurrence,
+  formatDate,
+  WEEKDAY_LONG,
+} from "@/lib/utils";
 
 type FormState = {
   id?: string;
@@ -27,6 +40,8 @@ type FormState = {
   amount: string;
   dueDate: string;
   status: TaskStatus;
+  recurrence: Recurrence;
+  recurrenceDay: number;
 };
 
 const emptyForm: FormState = {
@@ -37,6 +52,8 @@ const emptyForm: FormState = {
   amount: "",
   dueDate: "",
   status: "todo",
+  recurrence: "none",
+  recurrenceDay: 0,
 };
 
 const statusFilters: { value: "all" | TaskStatus; label: string }[] = [
@@ -106,6 +123,8 @@ export default function TasksPage() {
       amount: t.amount ? String(t.amount) : "",
       dueDate: toDateInput(t.dueDate),
       status: t.status,
+      recurrence: t.recurrence,
+      recurrenceDay: t.recurrenceDay,
     });
     setError("");
     setModalOpen(true);
@@ -122,7 +141,10 @@ export default function TasksPage() {
         assignedTo: form.assignedTo,
         priority: form.priority,
         amount: form.amount ? Number(form.amount) : 0,
-        dueDate: form.dueDate || null,
+        recurrence: form.recurrence,
+        recurrenceDay: form.recurrenceDay,
+        // For recurring tasks the server derives the due date from the schedule.
+        dueDate: form.recurrence === "none" ? form.dueDate || null : undefined,
         ...(editing ? { status: form.status } : {}),
       };
       if (editing) {
@@ -146,7 +168,12 @@ export default function TasksPage() {
       prev.map((t) => (t.id === task.id ? { ...t, status } : t))
     );
     try {
-      await api(`/api/tasks/${task.id}`, { method: "PATCH", json: { status } });
+      const res = await api<{ spawnedNext?: boolean }>(
+        `/api/tasks/${task.id}`,
+        { method: "PATCH", json: { status } }
+      );
+      // A completed recurring payment creates the next occurrence: refresh.
+      if (res?.spawnedNext) await load();
     } catch {
       await load();
     } finally {
@@ -322,14 +349,7 @@ export default function TasksPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Due date" hint={dueDateHint}>
-              <Input
-                type="date"
-                value={form.dueDate}
-                onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-              />
-            </Field>
-            <Field label="Amount (₹)" hint="Money tied to this task. Optional.">
+            <Field label="Amount (₹)" hint="Money paid for this task.">
               <Input
                 type="number"
                 min="0"
@@ -340,7 +360,81 @@ export default function TasksPage() {
                 placeholder="0"
               />
             </Field>
+            <Field label="Repeats" hint="Recurring payment schedule.">
+              <Select
+                value={form.recurrence}
+                onChange={(e) => {
+                  const r = e.target.value as Recurrence;
+                  setForm({
+                    ...form,
+                    recurrence: r,
+                    recurrenceDay: r === "weekly" ? 5 : 0,
+                  });
+                }}
+              >
+                <option value="none">One-time</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </Select>
+            </Field>
           </div>
+
+          {form.recurrence === "none" ? (
+            <Field label="Due date" hint={dueDateHint}>
+              <Input
+                type="date"
+                value={form.dueDate}
+                onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+              />
+            </Field>
+          ) : (
+            <div className="rounded-xl border border-accent/30 bg-accent-soft/40 p-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Pay day">
+                  {form.recurrence === "monthly" ? (
+                    <Select
+                      value={String(form.recurrenceDay)}
+                      onChange={(e) =>
+                        setForm({ ...form, recurrenceDay: Number(e.target.value) })
+                      }
+                    >
+                      <option value="0">Last day (end of month)</option>
+                      {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                        <option key={d} value={d}>
+                          Day {d}
+                        </option>
+                      ))}
+                    </Select>
+                  ) : (
+                    <Select
+                      value={String(form.recurrenceDay)}
+                      onChange={(e) =>
+                        setForm({ ...form, recurrenceDay: Number(e.target.value) })
+                      }
+                    >
+                      {[1, 2, 3, 4, 5, 6].map((d) => (
+                        <option key={d} value={d}>
+                          {WEEKDAY_LONG[d - 1]}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </Field>
+                <Field label="Next payment">
+                  <div className="rounded-xl border border-border-strong bg-surface-2 px-3.5 py-2.5 text-sm font-medium text-text">
+                    {formatDate(
+                      nextPaymentDate(form.recurrence, form.recurrenceDay)
+                    )}
+                  </div>
+                </Field>
+              </div>
+              <p className="mt-2.5 text-xs text-muted">
+                {describeRecurrence(form.recurrence, form.recurrenceDay)}. When
+                this payment is marked done, the next one is created
+                automatically.
+              </p>
+            </div>
+          )}
 
           {editing && (
             <Field label="Status">

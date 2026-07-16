@@ -38,7 +38,11 @@ export default function EmployeeTasks() {
     setBusyId(task.id);
     setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status } : t)));
     try {
-      await api(`/api/tasks/${task.id}`, { method: "PATCH", json: { status } });
+      const res = await api<{ spawnedNext?: boolean }>(
+        `/api/tasks/${task.id}`,
+        { method: "PATCH", json: { status } }
+      );
+      if (res?.spawnedNext) await load();
     } catch {
       await load();
     } finally {
