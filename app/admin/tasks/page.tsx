@@ -285,7 +285,7 @@ export default function TasksPage() {
               onEdit={() => openEdit(t)}
               onDelete={() => setConfirmDelete(t)}
               showPunch
-              punchEditable
+              punchAdmin
               onPunchUpdated={(p) => updatePunches(t.id, p)}
             />
           ))}

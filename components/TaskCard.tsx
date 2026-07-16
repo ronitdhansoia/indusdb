@@ -27,7 +27,7 @@ export function TaskCard({
   onDelete,
   busy,
   showPunch = false,
-  punchEditable = false,
+  punchAdmin = false,
   onPunchUpdated,
 }: {
   task: TaskDTO;
@@ -37,7 +37,8 @@ export function TaskCard({
   onDelete?: () => void;
   busy?: boolean;
   showPunch?: boolean;
-  punchEditable?: boolean;
+  /** Admin context: can adjust any day. Employees can only punch today. */
+  punchAdmin?: boolean;
   onPunchUpdated?: (punches: string[]) => void;
 }) {
   const due = relativeDue(task.dueDate);
@@ -149,7 +150,7 @@ export function TaskCard({
         {showPunch && task.dailyPunch && (
           <PunchTracker
             task={task}
-            editable={punchEditable}
+            canEditAny={punchAdmin}
             onUpdated={(punches) => onPunchUpdated?.(punches)}
           />
         )}

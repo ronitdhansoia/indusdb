@@ -16,15 +16,17 @@ const WD = ["M", "T", "W", "T", "F", "S", "S"];
 
 export function PunchTracker({
   task,
-  editable,
+  canEditAny,
   onUpdated,
 }: {
   task: TaskDTO;
-  editable: boolean;
+  /** Admin: may toggle any working day. Employees can only punch today. */
+  canEditAny: boolean;
   onUpdated: (punches: string[]) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [showCal, setShowCal] = useState(false);
+  const [error, setError] = useState("");
 
   const prog = punchProgress(task);
   if (!prog) return null;
@@ -38,10 +40,14 @@ export function PunchTracker({
   const todayInPeriod =
     todayKey.startsWith(task.periodMonth) && today.getDay() !== 0;
   const punchedToday = task.punches.includes(todayKey);
+  const settled = task.status === "done";
   const earned = Math.round((task.amount * prog.done) / (prog.total || 1));
 
-  async function toggle(key: string) {
-    if (!editable || busy) return;
+  // date === undefined -> "punch today" (server stamps the real date)
+  async function toggle(date?: string) {
+    if (busy) return;
+    setError("");
+    const key = date ?? todayKey;
     const original = task.punches;
     const set = new Set(original);
     if (set.has(key)) set.delete(key);
@@ -51,11 +57,12 @@ export function PunchTracker({
     try {
       const res = await api<{ punches: string[] }>(
         `/api/tasks/${task.id}/punch`,
-        { method: "POST", json: { date: key } }
+        { method: "POST", json: date ? { date } : {} }
       );
       onUpdated(res.punches);
-    } catch {
+    } catch (e) {
       onUpdated(original);
+      setError(e instanceof Error ? e.message : "Could not punch in.");
     } finally {
       setBusy(false);
     }
@@ -93,11 +100,11 @@ export function PunchTracker({
         )}
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
-        {editable && (
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {!canEditAny && (
           <button
-            onClick={() => toggle(todayKey)}
-            disabled={!todayInPeriod || busy}
+            onClick={() => toggle()}
+            disabled={!todayInPeriod || settled || busy}
             className={cn(
               "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12.5px] font-medium transition-all disabled:opacity-40",
               punchedToday
@@ -116,6 +123,16 @@ export function PunchTracker({
           {showCal ? "Hide calendar" : "View calendar"}
         </button>
       </div>
+
+      {!canEditAny && (
+        <p className="mt-2 text-[11px] text-faint">
+          You can only punch in for today. Sundays are off.
+        </p>
+      )}
+
+      {error && (
+        <p className="mt-2 text-[11.5px] font-medium text-danger">{error}</p>
+      )}
 
       {showCal && (
         <div className="mt-3 border-t border-border pt-3">
@@ -137,8 +154,8 @@ export function PunchTracker({
               return (
                 <button
                   key={day}
-                  disabled={isSun || !editable || busy}
-                  onClick={() => toggle(key)}
+                  disabled={isSun || !canEditAny || busy}
+                  onClick={() => canEditAny && toggle(key)}
                   title={isSun ? "Off day" : key}
                   className={cn(
                     "flex h-7 items-center justify-center rounded-md text-[11px] font-medium transition-all",
@@ -146,9 +163,9 @@ export function PunchTracker({
                       ? "cursor-default bg-transparent text-faint/50"
                       : punched
                         ? "bg-accent text-accent-fg"
-                        : "bg-surface text-muted hover:bg-accent-soft",
-                    isToday && !punched && "ring-1 ring-accent",
-                    editable && !isSun && "cursor-pointer"
+                        : "bg-surface text-muted",
+                    canEditAny && !isSun && "cursor-pointer hover:bg-accent-soft",
+                    isToday && !punched && "ring-1 ring-accent"
                   )}
                 >
                   {day}
@@ -156,6 +173,11 @@ export function PunchTracker({
               );
             })}
           </div>
+          {canEditAny && (
+            <p className="mt-2 text-[11px] text-faint">
+              Tap any working day to adjust (admin correction).
+            </p>
+          )}
         </div>
       )}
     </div>

@@ -115,7 +115,6 @@ export default function EmployeeTasks() {
                       busy={busyId === t.id}
                       onStatusChange={(s) => changeStatus(t, s)}
                       showPunch
-                      punchEditable
                       onPunchUpdated={(p) => updatePunches(t.id, p)}
                     />
                   ))
