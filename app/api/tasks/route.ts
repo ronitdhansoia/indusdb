@@ -4,7 +4,12 @@ import { connectDB } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
 import { User } from "@/models/User";
 import { requireAuth, requireAdmin } from "@/lib/guards";
-import { nextPaymentDate, normalizeRecurrence, type Recurrence } from "@/lib/utils";
+import {
+  nextPaymentDate,
+  normalizeRecurrence,
+  monthKey,
+  type Recurrence,
+} from "@/lib/utils";
 
 type LeanTask = {
   _id: mongoose.Types.ObjectId;
@@ -15,6 +20,9 @@ type LeanTask = {
   amount?: number;
   recurrence?: string;
   recurrenceDay?: number;
+  dailyPunch?: boolean;
+  periodMonth?: string;
+  punches?: string[];
   assignedTo?: { _id: mongoose.Types.ObjectId; name: string } | null;
   dueDate?: Date | null;
   completedAt?: Date | null;
@@ -32,6 +40,9 @@ function serializeTask(t: LeanTask) {
     amount: t.amount ?? 0,
     recurrence: (t.recurrence ?? "none") as Recurrence,
     recurrenceDay: t.recurrenceDay ?? 0,
+    dailyPunch: t.dailyPunch ?? false,
+    periodMonth: t.periodMonth ?? "",
+    punches: t.punches ?? [],
     assignedTo: t.assignedTo
       ? { id: String(t.assignedTo._id), name: t.assignedTo.name }
       : null,
@@ -95,6 +106,7 @@ export async function POST(req: Request) {
       amount,
       recurrence,
       recurrenceDay,
+      dailyPunch,
     } = await req.json();
 
     if (!title || !assignedTo) {
@@ -123,6 +135,9 @@ export async function POST(req: Request) {
           ? new Date(dueDate)
           : null;
 
+    // Daily punch only applies to monthly recurring payments.
+    const punchOn = rec.recurrence === "monthly" && Boolean(dailyPunch);
+
     const task = await Task.create({
       title: String(title).trim(),
       description: description ? String(description).trim() : undefined,
@@ -132,6 +147,9 @@ export async function POST(req: Request) {
       amount: parseAmount(amount),
       recurrence: rec.recurrence,
       recurrenceDay: rec.recurrenceDay,
+      dailyPunch: punchOn,
+      periodMonth: punchOn && resolvedDue ? monthKey(resolvedDue) : "",
+      punches: [],
       dueDate: resolvedDue,
     });
 

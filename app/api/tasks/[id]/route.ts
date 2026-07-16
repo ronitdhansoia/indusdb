@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
 import { User } from "@/models/User";
 import { requireAuth } from "@/lib/guards";
-import { nextPaymentDate, normalizeRecurrence } from "@/lib/utils";
+import { nextPaymentDate, normalizeRecurrence, monthKey } from "@/lib/utils";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -65,6 +65,13 @@ export async function PATCH(req: Request, { params }: Ctx) {
         if (rec.recurrence !== "none" && body.dueDate === undefined) {
           task.dueDate = nextPaymentDate(rec.recurrence, rec.recurrenceDay);
         }
+        if (rec.recurrence !== "monthly") task.dailyPunch = false;
+      }
+      if (body.dailyPunch !== undefined) {
+        task.dailyPunch = task.recurrence === "monthly" && Boolean(body.dailyPunch);
+        if (task.dailyPunch && task.dueDate) {
+          task.periodMonth = monthKey(new Date(task.dueDate));
+        }
       }
       if (body.dueDate !== undefined) {
         task.dueDate = body.dueDate ? new Date(body.dueDate) : null;
@@ -106,6 +113,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
         amount: task.amount,
         recurrence: task.recurrence,
         recurrenceDay: task.recurrenceDay,
+        dailyPunch: task.dailyPunch,
+        periodMonth: task.dailyPunch && next ? monthKey(next) : "",
+        punches: [], // fresh period starts with no punches
         assignedTo: task.assignedTo,
         assignedBy: task.assignedBy,
         dueDate: next,
@@ -126,6 +136,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
       amount?: number;
       recurrence?: string;
       recurrenceDay?: number;
+      dailyPunch?: boolean;
+      periodMonth?: string;
+      punches?: string[];
       assignedTo?: { _id: unknown; name: string } | null;
       dueDate?: Date | null;
       completedAt?: Date | null;
@@ -144,6 +157,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
         amount: t.amount ?? 0,
         recurrence: t.recurrence ?? "none",
         recurrenceDay: t.recurrenceDay ?? 0,
+        dailyPunch: t.dailyPunch ?? false,
+        periodMonth: t.periodMonth ?? "",
+        punches: t.punches ?? [],
         assignedTo: t.assignedTo
           ? { id: String(t.assignedTo._id), name: t.assignedTo.name }
           : null,
