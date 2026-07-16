@@ -115,6 +115,24 @@ proxy.ts          # Route protection (role-based redirects)
 scripts/seed.ts   # Database seed
 ```
 
+## Deploy to Vercel
+
+The app is serverless-ready (the Mongo connection is cached across invocations).
+
+1. **Use a cloud database** — a local MongoDB won't work on Vercel. Create a free
+   [MongoDB Atlas](https://www.mongodb.com/atlas) cluster and, under
+   **Network Access**, allow `0.0.0.0/0` (Vercel IPs are dynamic).
+2. **Import the repo** into Vercel (New Project → Import Git Repository). The
+   Next.js preset is detected automatically.
+3. **Set Environment Variables** in Vercel (Project → Settings → Environment
+   Variables) — `.env.local` is gitignored and is **not** read by Vercel:
+   - `MONGODB_URI` — your Atlas `mongodb+srv://…/indus-appliances` string
+     (URL-encode special characters in the password, e.g. `@` → `%40`)
+   - `JWT_SECRET` — a long random string
+4. **Seed the cloud DB once** (from your machine, with `MONGODB_URI` pointed at
+   Atlas): `npm run seed`.
+5. **Deploy.** Then sign in with the seeded admin account.
+
 ## How auth works
 
 1. `POST /api/auth/login` verifies credentials (bcrypt) and sets a signed JWT in
