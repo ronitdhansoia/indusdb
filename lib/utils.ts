@@ -169,6 +169,57 @@ export function normalizeRecurrence(
   return { recurrence: r, recurrenceDay: day };
 }
 
+/* -------------------------- daily punch helpers --------------------------- */
+
+/** Local date as "YYYY-MM-DD". */
+export function dateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** Local month as "YYYY-MM". */
+export function monthKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/** Count of working days (Mon-Sat, Sunday off) in a "YYYY-MM" month. */
+export function workingDaysInMonth(periodMonth: string): number {
+  const [y, m] = periodMonth.split("-").map(Number);
+  if (!y || !m) return 0;
+  const days = new Date(y, m, 0).getDate();
+  let count = 0;
+  for (let d = 1; d <= days; d++) {
+    if (new Date(y, m - 1, d).getDay() !== 0) count++;
+  }
+  return count;
+}
+
+/** Friendly label for a "YYYY-MM" period, e.g. "July 2026". */
+export function monthLabel(periodMonth: string): string {
+  const [y, m] = periodMonth.split("-").map(Number);
+  if (!y || !m) return "";
+  return new Date(y, m - 1, 1).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/** Punch progress for a daily-punch task: days done vs working days in its month. */
+export function punchProgress(task: {
+  dailyPunch?: boolean;
+  periodMonth?: string;
+  punches?: string[];
+}): { done: number; total: number; pct: number } | null {
+  if (!task.dailyPunch || !task.periodMonth) return null;
+  const total = workingDaysInMonth(task.periodMonth);
+  const done = (task.punches ?? []).filter((p) =>
+    p.startsWith(task.periodMonth!)
+  ).length;
+  return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
+}
+
 function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;

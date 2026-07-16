@@ -16,6 +16,9 @@ export interface TaskDTO {
   amount: number;
   recurrence: Recurrence;
   recurrenceDay: number;
+  dailyPunch: boolean;
+  periodMonth: string;
+  punches: string[];
   assignedTo: EmployeeRef | null;
   dueDate: string | null;
   completedAt: string | null;

@@ -13,6 +13,9 @@ export interface ITask {
   amount: number; // money associated with the task (₹)
   recurrence: Recurrence; // recurring payment schedule
   recurrenceDay: number; // monthly: 0 = end of month, 1-28 = day; weekly: 1-6 = Mon-Sat
+  dailyPunch: boolean; // employee must punch in daily during the period
+  periodMonth: string; // "YYYY-MM" the punches belong to (for daily-punch tasks)
+  punches: string[]; // "YYYY-MM-DD" working days the employee marked done
   assignedTo: mongoose.Types.ObjectId; // employee
   assignedBy: mongoose.Types.ObjectId; // admin
   dueDate?: Date | null;
@@ -44,6 +47,9 @@ const TaskSchema = new Schema<ITask>(
       default: "none",
     },
     recurrenceDay: { type: Number, default: 0 },
+    dailyPunch: { type: Boolean, default: false },
+    periodMonth: { type: String, default: "" },
+    punches: { type: [String], default: [] },
     assignedTo: {
       type: Schema.Types.ObjectId,
       ref: "User",
