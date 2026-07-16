@@ -64,14 +64,6 @@ export default async function LoginPage() {
           <div className="mt-8">
             <LoginForm />
           </div>
-
-          <div className="mt-8 rounded-xl border border-border bg-surface-2/60 px-4 py-3 text-xs text-muted">
-            <p className="font-semibold text-muted">Demo accounts</p>
-            <p className="mt-1">
-              Admin · admin@indusappliances.com · admin123
-            </p>
-            <p>Employee · priya@indusappliances.com · employee123</p>
-          </div>
         </div>
       </div>
     </div>
