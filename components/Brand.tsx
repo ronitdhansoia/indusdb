@@ -1,27 +1,36 @@
+import Image from "next/image";
+
 export function Brand({ compact = false }: { compact?: boolean }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-accent-fg shadow-sm">
-        {/* Stylised "I" mark for Indus */}
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M8 4h8M8 20h8M12 4v16"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-          />
-        </svg>
+  if (compact) {
+    return (
+      <span className="inline-flex items-center justify-center rounded-lg bg-white p-1 shadow-sm ring-1 ring-black/5">
+        <Image
+          src="/indus-logo.jpeg"
+          alt="Indus Appliances"
+          width={30}
+          height={30}
+          className="rounded"
+          priority
+        />
       </span>
-      {!compact && (
-        <div className="leading-tight">
-          <p className="text-[15px] font-semibold tracking-tight text-text">
-            Indus Tracker
-          </p>
-          <p className="text-[11px] font-medium uppercase tracking-wider text-faint">
-            Appliances
-          </p>
-        </div>
-      )}
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="inline-flex w-fit items-center justify-center rounded-2xl bg-white p-2.5 shadow-sm ring-1 ring-black/5">
+        <Image
+          src="/indus-logo.jpeg"
+          alt="Indus Appliances Pvt Ltd"
+          width={112}
+          height={112}
+          className="h-auto w-28 rounded-lg"
+          priority
+        />
+      </span>
+      <span className="pl-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-faint">
+        Task Tracker
+      </span>
     </div>
   );
 }
