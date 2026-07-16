@@ -11,16 +11,16 @@ Built with **Next.js 16 (App Router)**, **MongoDB / Mongoose**, and
 
 ## Features
 
-- **Role-based auth** — one login for two experiences: `admin` and `employee`.
-- **Admin dashboard** — live stats (team size, active tasks, completion rate,
+- **Role-based auth**: one login for two experiences: `admin` and `employee`.
+- **Admin dashboard**: live stats (team size, active tasks, completion rate,
   overdue), team-progress bars, and recent activity.
-- **Employee management** — create team members, set job titles, reset
+- **Employee management**: create team members, set job titles, reset
   passwords, activate/deactivate, and see each person's task breakdown.
-- **Task assignment & tracking** — title, description, priority, due date, and a
+- **Task assignment & tracking**: title, description, priority, due date, and a
   `To do → In progress → Done` workflow with completion timestamps.
-- **Employee task board** — assigned work grouped by status, updated with one
+- **Employee task board**: assigned work grouped by status, updated with one
   click.
-- **Personal checklist** — a private to-do list for each employee.
+- **Personal checklist**: a private to-do list for each employee.
 
 ## Tech stack
 
@@ -46,7 +46,7 @@ Built with **Next.js 16 (App Router)**, **MongoDB / Mongoose**, and
     brew install mongodb-community
     brew services start mongodb-community
     ```
-  - **or MongoDB Atlas** — grab a `mongodb+srv://…` connection string.
+  - **or MongoDB Atlas**: grab a `mongodb+srv://…` connection string.
 
 ### 2. Configure environment
 
@@ -119,16 +119,16 @@ scripts/seed.ts   # Database seed
 
 The app is serverless-ready (the Mongo connection is cached across invocations).
 
-1. **Use a cloud database** — a local MongoDB won't work on Vercel. Create a free
+1. **Use a cloud database**: a local MongoDB won't work on Vercel. Create a free
    [MongoDB Atlas](https://www.mongodb.com/atlas) cluster and, under
    **Network Access**, allow `0.0.0.0/0` (Vercel IPs are dynamic).
 2. **Import the repo** into Vercel (New Project → Import Git Repository). The
    Next.js preset is detected automatically.
 3. **Set Environment Variables** in Vercel (Project → Settings → Environment
-   Variables) — `.env.local` is gitignored and is **not** read by Vercel:
-   - `MONGODB_URI` — your Atlas `mongodb+srv://…/indus-appliances` string
+   Variables): `.env.local` is gitignored and is **not** read by Vercel:
+   - `MONGODB_URI`: your Atlas `mongodb+srv://…/indus-appliances` string
      (URL-encode special characters in the password, e.g. `@` → `%40`)
-   - `JWT_SECRET` — a long random string
+   - `JWT_SECRET`: a long random string
 4. **Seed the cloud DB once** (from your machine, with `MONGODB_URI` pointed at
    Atlas): `npm run seed`.
 5. **Deploy.** Then sign in with the seeded admin account.

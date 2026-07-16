@@ -281,7 +281,7 @@ export default function EmployeesPage() {
                 onChange={(e) => setForm({ ...form, active: e.target.checked })}
                 className="h-4 w-4 accent-[var(--accent)]"
               />
-              Active — can sign in and receive tasks
+              Active. Can sign in and receive tasks
             </label>
           )}
 

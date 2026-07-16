@@ -189,7 +189,7 @@ export default function AdminDaily() {
                             )}
                           >
                             {cell.length === 0 ? (
-                              <span className="text-faint">{off ? "—" : "·"}</span>
+                              <span className="text-faint">·</span>
                             ) : (
                               <div className="inline-flex flex-col items-center">
                                 <span className="text-[13px] font-semibold text-text">
@@ -223,7 +223,7 @@ export default function AdminDaily() {
                         isSunday(days[i]) ? "text-faint" : "text-text"
                       )}
                     >
-                      {m > 0 ? formatMoney(m) : "—"}
+                      {m > 0 ? formatMoney(m) : "·"}
                     </td>
                   ))}
                   <td className="px-4 py-3 text-right text-[13px] font-bold text-accent">

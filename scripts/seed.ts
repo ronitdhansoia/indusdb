@@ -1,7 +1,7 @@
 /**
  * Seed script: creates the first admin account and a few demo employees + tasks.
  * Run with:  npm run seed
- * Idempotent — re-running updates the admin password and skips existing users.
+ * Idempotent: re-running updates the admin password and skips existing users.
  */
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";

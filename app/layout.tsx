@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Indus Tracker — Task & Team Management",
+  title: "Indus Tracker · Task & Team Management",
   description:
     "Daily task tracking for Indus Appliances. Assign work, follow progress, keep the team aligned.",
 };

@@ -164,7 +164,7 @@ export default function TasksPage() {
 
   const noEmployees = employees.length === 0;
 
-  // Sunday is the weekly off day — warn if a task is scheduled for one.
+  // Sunday is the weekly off day; warn if a task is scheduled for one.
   const dueDateHint =
     form.dueDate && isSunday(new Date(form.dueDate + "T00:00:00"))
       ? "Heads up: that's a Sunday (off day)."

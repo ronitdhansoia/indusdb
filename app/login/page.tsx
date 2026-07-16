@@ -25,7 +25,7 @@ export default async function LoginPage() {
         </div>
         <div className="relative max-w-md">
           <h1 className="text-4xl font-semibold leading-tight tracking-tight text-white">
-            Every task, every teammate — tracked in one calm place.
+            Every task, every teammate, tracked in one calm place.
           </h1>
           <p className="mt-4 text-lg text-white/80">
             Assign work, follow progress in real time, and keep the Indus
@@ -68,9 +68,9 @@ export default async function LoginPage() {
           <div className="mt-8 rounded-xl border border-border bg-surface-2/60 px-4 py-3 text-xs text-muted">
             <p className="font-semibold text-muted">Demo accounts</p>
             <p className="mt-1">
-              Admin — admin@indusappliances.com · admin123
+              Admin · admin@indusappliances.com · admin123
             </p>
-            <p>Employee — priya@indusappliances.com · employee123</p>
+            <p>Employee · priya@indusappliances.com · employee123</p>
           </div>
         </div>
       </div>
