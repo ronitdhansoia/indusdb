@@ -15,6 +15,74 @@ export function avatarHue(name: string): number {
   return h;
 }
 
+const moneyFmt = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+
+/** Format a number as Indian rupees, e.g. 1234 -> "₹1,234". */
+export function formatMoney(n: number | null | undefined): string {
+  return moneyFmt.format(n ?? 0);
+}
+
+/* ------------------------------- week helpers ------------------------------ */
+
+/** Monday 00:00 of the week containing `date`. */
+export function startOfWeek(date: Date): Date {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = d.getDay(); // 0 = Sun, 1 = Mon, ...
+  const diff = day === 0 ? -6 : 1 - day; // shift back to Monday
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+export function addDays(date: Date, n: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+/** The 7 dates (Mon..Sun) of the week starting at `monday`. */
+export function weekDays(monday: Date): Date[] {
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+}
+
+export function isSunday(date: Date): boolean {
+  return date.getDay() === 0;
+}
+
+export function sameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+export const WEEKDAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+export const WEEKDAY_LONG = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+/** e.g. "14 – 20 Jul" for the given Monday. */
+export function weekRangeLabel(monday: Date): string {
+  const end = addDays(monday, 6);
+  const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
+  const sameMonth = monday.getMonth() === end.getMonth();
+  const startStr = monday.toLocaleDateString(
+    undefined,
+    sameMonth ? { day: "numeric" } : opts
+  );
+  return `${startStr} – ${end.toLocaleDateString(undefined, opts)}`;
+}
+
 export function formatDate(input: string | Date | null | undefined): string {
   if (!input) return "";
   const d = new Date(input);

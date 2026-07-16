@@ -11,6 +11,7 @@ type LeanTask = {
   description?: string;
   status: string;
   priority: string;
+  amount?: number;
   assignedTo?: { _id: mongoose.Types.ObjectId; name: string } | null;
   dueDate?: Date | null;
   completedAt?: Date | null;
@@ -25,6 +26,7 @@ function serializeTask(t: LeanTask) {
     description: t.description ?? "",
     status: t.status,
     priority: t.priority,
+    amount: t.amount ?? 0,
     assignedTo: t.assignedTo
       ? { id: String(t.assignedTo._id), name: t.assignedTo.name }
       : null,
@@ -33,6 +35,12 @@ function serializeTask(t: LeanTask) {
     createdAt: t.createdAt,
     updatedAt: t.updatedAt,
   };
+}
+
+/** Coerce a request value into a non-negative money amount. */
+function parseAmount(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
 }
 
 // GET /api/tasks -> admin: all (with ?employee= & ?status= filters); employee: own
@@ -72,7 +80,7 @@ export async function POST(req: Request) {
   const { session } = auth;
 
   try {
-    const { title, description, assignedTo, priority, dueDate } =
+    const { title, description, assignedTo, priority, dueDate, amount } =
       await req.json();
 
     if (!title || !assignedTo) {
@@ -97,6 +105,7 @@ export async function POST(req: Request) {
       assignedTo,
       assignedBy: session.sub,
       priority: ["low", "medium", "high"].includes(priority) ? priority : "medium",
+      amount: parseAmount(amount),
       dueDate: dueDate ? new Date(dueDate) : null,
     });
 

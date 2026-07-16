@@ -75,45 +75,38 @@ async function main() {
   // Only seed sample tasks if there are none yet, so re-seeding stays clean.
   const taskCount = await Task.countDocuments();
   if (taskCount === 0) {
-    const day = 24 * 60 * 60 * 1000;
-    const now = Date.now();
+    // Monday 09:00 of the current week, so sample tasks land Mon–Sat.
+    const monday = (() => {
+      const d = new Date();
+      const dow = d.getDay(); // 0 = Sun
+      const diff = dow === 0 ? -6 : 1 - dow;
+      d.setDate(d.getDate() + diff);
+      d.setHours(9, 0, 0, 0);
+      return d;
+    })();
+    const onDay = (offset: number) => {
+      const d = new Date(monday);
+      d.setDate(d.getDate() + offset);
+      return d;
+    };
+
+    // offset: 0 = Mon ... 5 = Sat (Sunday is an off day, so nothing on 6)
     const sample = [
-      {
-        title: "Follow up with 3 walk-in leads",
-        description: "Call back the customers who visited the showroom on Monday.",
-        assignedTo: employees[0]._id,
-        priority: "high" as const,
-        status: "in_progress" as const,
-        dueDate: new Date(now + day),
-      },
-      {
-        title: "Update the weekly sales report",
-        assignedTo: employees[0]._id,
-        priority: "medium" as const,
-        status: "todo" as const,
-        dueDate: new Date(now + 3 * day),
-      },
-      {
-        title: "Repair AC unit at Andheri site",
-        description: "Customer reported cooling issue. Carry replacement compressor.",
-        assignedTo: employees[1]._id,
-        priority: "high" as const,
-        status: "todo" as const,
-        dueDate: new Date(now + day),
-      },
-      {
-        title: "Stock audit for refrigerators",
-        assignedTo: employees[2]._id,
-        priority: "low" as const,
-        status: "done" as const,
-        dueDate: new Date(now - day),
-        completedAt: new Date(now - 2 * 60 * 60 * 1000),
-      },
+      { title: "Follow up with 3 walk-in leads", description: "Call back the customers who visited the showroom.", assignedTo: employees[0]._id, priority: "high" as const, status: "done" as const, amount: 18000, dueDate: onDay(0), completedAt: onDay(0) },
+      { title: "Close pending EMI paperwork", assignedTo: employees[0]._id, priority: "medium" as const, status: "in_progress" as const, amount: 42000, dueDate: onDay(1) },
+      { title: "Update the weekly sales report", assignedTo: employees[0]._id, priority: "medium" as const, status: "todo" as const, amount: 0, dueDate: onDay(3) },
+      { title: "Demo washing machine to corporate client", assignedTo: employees[0]._id, priority: "high" as const, status: "todo" as const, amount: 65000, dueDate: onDay(5) },
+
+      { title: "Repair AC unit at Andheri site", description: "Cooling issue. Carry replacement compressor.", assignedTo: employees[1]._id, priority: "high" as const, status: "done" as const, amount: 3500, dueDate: onDay(0), completedAt: onDay(0) },
+      { title: "Install chimney at Bandra flat", assignedTo: employees[1]._id, priority: "medium" as const, status: "in_progress" as const, amount: 5200, dueDate: onDay(2) },
+      { title: "Service 2 microwaves (warranty)", assignedTo: employees[1]._id, priority: "low" as const, status: "todo" as const, amount: 0, dueDate: onDay(4) },
+
+      { title: "Stock audit for refrigerators", assignedTo: employees[2]._id, priority: "low" as const, status: "done" as const, amount: 0, dueDate: onDay(0), completedAt: onDay(0) },
+      { title: "Reorder low-stock water purifiers", assignedTo: employees[2]._id, priority: "high" as const, status: "in_progress" as const, amount: 88000, dueDate: onDay(2) },
+      { title: "Tally delivery challans for the week", assignedTo: employees[2]._id, priority: "medium" as const, status: "todo" as const, amount: 0, dueDate: onDay(5) },
     ];
-    await Task.create(
-      sample.map((s) => ({ ...s, assignedBy: admin._id }))
-    );
-    console.log(`✔ Created ${sample.length} sample tasks`);
+    await Task.create(sample.map((s) => ({ ...s, assignedBy: admin._id })));
+    console.log(`✔ Created ${sample.length} sample tasks (spread Mon–Sat, with amounts)`);
   } else {
     console.log(`• Skipped sample tasks (${taskCount} already exist)`);
   }

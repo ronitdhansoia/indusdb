@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar } from "./ui";
-import { Logout, Dashboard, Users, Tasks, Check } from "./icons";
+import { Logout, Dashboard, Users, Tasks, Check, Calendar } from "./icons";
 import { Brand } from "./Brand";
 
 type Role = "admin" | "employee";
@@ -21,11 +21,13 @@ type NavItem = {
 const NAVS: Record<Role, NavItem[]> = {
   admin: [
     { href: "/admin", label: "Dashboard", icon: Dashboard },
+    { href: "/admin/daily", label: "Daily", icon: Calendar },
     { href: "/admin/employees", label: "Employees", icon: Users },
     { href: "/admin/tasks", label: "Tasks", icon: Tasks },
   ],
   employee: [
     { href: "/employee", label: "My Tasks", icon: Tasks },
+    { href: "/employee/daily", label: "Daily", icon: Calendar },
     { href: "/employee/checklist", label: "Checklist", icon: Check },
   ],
 };

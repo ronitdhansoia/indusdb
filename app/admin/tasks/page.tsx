@@ -16,7 +16,7 @@ import {
 } from "@/components/ui";
 import { TaskCard } from "@/components/TaskCard";
 import { Plus, Tasks as TasksIcon } from "@/components/icons";
-import { cn } from "@/lib/utils";
+import { cn, isSunday } from "@/lib/utils";
 
 type FormState = {
   id?: string;
@@ -24,6 +24,7 @@ type FormState = {
   description: string;
   assignedTo: string;
   priority: TaskPriority;
+  amount: string;
   dueDate: string;
   status: TaskStatus;
 };
@@ -33,6 +34,7 @@ const emptyForm: FormState = {
   description: "",
   assignedTo: "",
   priority: "medium",
+  amount: "",
   dueDate: "",
   status: "todo",
 };
@@ -101,6 +103,7 @@ export default function TasksPage() {
       description: t.description,
       assignedTo: t.assignedTo?.id ?? "",
       priority: t.priority,
+      amount: t.amount ? String(t.amount) : "",
       dueDate: toDateInput(t.dueDate),
       status: t.status,
     });
@@ -118,6 +121,7 @@ export default function TasksPage() {
         description: form.description,
         assignedTo: form.assignedTo,
         priority: form.priority,
+        amount: form.amount ? Number(form.amount) : 0,
         dueDate: form.dueDate || null,
         ...(editing ? { status: form.status } : {}),
       };
@@ -159,6 +163,12 @@ export default function TasksPage() {
   }
 
   const noEmployees = employees.length === 0;
+
+  // Sunday is the weekly off day — warn if a task is scheduled for one.
+  const dueDateHint =
+    form.dueDate && isSunday(new Date(form.dueDate + "T00:00:00"))
+      ? "Heads up: that's a Sunday (off day)."
+      : undefined;
 
   return (
     <div className="animate-fade">
@@ -312,28 +322,40 @@ export default function TasksPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Due date">
+            <Field label="Due date" hint={dueDateHint}>
               <Input
                 type="date"
                 value={form.dueDate}
                 onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
               />
             </Field>
-            {editing && (
-              <Field label="Status">
-                <Select
-                  value={form.status}
-                  onChange={(e) =>
-                    setForm({ ...form, status: e.target.value as TaskStatus })
-                  }
-                >
-                  <option value="todo">To do</option>
-                  <option value="in_progress">In progress</option>
-                  <option value="done">Done</option>
-                </Select>
-              </Field>
-            )}
+            <Field label="Amount (₹)" hint="Money tied to this task. Optional.">
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                placeholder="0"
+              />
+            </Field>
           </div>
+
+          {editing && (
+            <Field label="Status">
+              <Select
+                value={form.status}
+                onChange={(e) =>
+                  setForm({ ...form, status: e.target.value as TaskStatus })
+                }
+              >
+                <option value="todo">To do</option>
+                <option value="in_progress">In progress</option>
+                <option value="done">Done</option>
+              </Select>
+            </Field>
+          )}
 
           {error && (
             <p className="rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm font-medium text-danger">

@@ -49,6 +49,10 @@ export async function PATCH(req: Request, { params }: Ctx) {
       ) {
         task.priority = body.priority;
       }
+      if (body.amount !== undefined) {
+        const n = Number(body.amount);
+        task.amount = Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
+      }
       if (body.dueDate !== undefined) {
         task.dueDate = body.dueDate ? new Date(body.dueDate) : null;
       }
@@ -78,6 +82,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
       description?: string;
       status: string;
       priority: string;
+      amount?: number;
       assignedTo?: { _id: unknown; name: string } | null;
       dueDate?: Date | null;
       completedAt?: Date | null;
@@ -92,6 +97,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
         description: t.description ?? "",
         status: t.status,
         priority: t.priority,
+        amount: t.amount ?? 0,
         assignedTo: t.assignedTo
           ? { id: String(t.assignedTo._id), name: t.assignedTo.name }
           : null,

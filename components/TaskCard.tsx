@@ -1,7 +1,7 @@
 "use client";
 
 import type { TaskDTO, TaskStatus } from "@/lib/types";
-import { cn, relativeDue, PRIORITY_META } from "@/lib/utils";
+import { cn, relativeDue, formatMoney, PRIORITY_META } from "@/lib/utils";
 import { Avatar, Badge } from "./ui";
 import { StatusControl } from "./StatusControl";
 import { Calendar, Flag, Pencil, Trash } from "./icons";
@@ -100,6 +100,10 @@ export function TaskCard({
             <Flag className="h-3 w-3" />
             {PRIORITY_META[task.priority].label}
           </Badge>
+
+          {task.amount > 0 && (
+            <Badge tone="accent">{formatMoney(task.amount)}</Badge>
+          )}
 
           {showAssignee && task.assignedTo && (
             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">

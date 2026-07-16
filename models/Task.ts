@@ -9,6 +9,7 @@ export interface ITask {
   description?: string;
   status: TaskStatus;
   priority: TaskPriority;
+  amount: number; // money associated with the task (₹)
   assignedTo: mongoose.Types.ObjectId; // employee
   assignedBy: mongoose.Types.ObjectId; // admin
   dueDate?: Date | null;
@@ -33,6 +34,7 @@ const TaskSchema = new Schema<ITask>(
       default: "medium",
       required: true,
     },
+    amount: { type: Number, default: 0, min: 0 },
     assignedTo: {
       type: Schema.Types.ObjectId,
       ref: "User",

@@ -12,6 +12,7 @@ export interface TaskDTO {
   description: string;
   status: TaskStatus;
   priority: TaskPriority;
+  amount: number;
   assignedTo: EmployeeRef | null;
   dueDate: string | null;
   completedAt: string | null;
