@@ -43,6 +43,14 @@ export function addDays(date: Date, n: number): Date {
   return d;
 }
 
+export function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+export function addMonths(date: Date, n: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + n, 1);
+}
+
 /** The 7 dates (Mon..Sun) of the week starting at `monday`. */
 export function weekDays(monday: Date): Date[] {
   return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
@@ -236,6 +244,64 @@ export function punchProgress(task: {
     p.startsWith(task.periodMonth!)
   ).length;
   return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
+}
+
+/**
+ * The dates (as "YYYY-MM-DD") within a given month that a task appears on:
+ * - daily-punch (that period): every working day (Mon-Sat)
+ * - weekly recurring: every matching weekday
+ * - monthly recurring: its pay day
+ * - one-time: its due date, if in the month
+ */
+export function taskOccurrencesInMonth(
+  task: {
+    recurrence: Recurrence;
+    recurrenceDay: number;
+    dailyPunch?: boolean;
+    periodMonth?: string;
+    dueDate?: string | Date | null;
+  },
+  year: number,
+  month: number // 1-based
+): string[] {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const mk = `${year}-${pad(month)}`;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const key = (d: number) => `${mk}-${pad(d)}`;
+  const out: string[] = [];
+
+  if (task.dailyPunch && task.periodMonth === mk) {
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (new Date(year, month - 1, d).getDay() !== 0) out.push(key(d));
+    }
+    return out;
+  }
+
+  if (task.recurrence === "weekly") {
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (new Date(year, month - 1, d).getDay() === task.recurrenceDay) {
+        out.push(key(d));
+      }
+    }
+    return out;
+  }
+
+  if (task.recurrence === "monthly") {
+    const day =
+      task.recurrenceDay === 0
+        ? daysInMonth
+        : Math.min(task.recurrenceDay, daysInMonth);
+    out.push(key(day));
+    return out;
+  }
+
+  if (task.dueDate) {
+    const dd = new Date(task.dueDate);
+    if (dd.getFullYear() === year && dd.getMonth() === month - 1) {
+      out.push(dateKey(dd));
+    }
+  }
+  return out;
 }
 
 function ordinal(n: number): string {
