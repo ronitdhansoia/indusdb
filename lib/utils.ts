@@ -184,6 +184,24 @@ export function monthKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
+/**
+ * "YYYY-MM-DD" for the current instant in a given IANA timezone.
+ * Used server-side to decide what "today" is regardless of where the
+ * server runs (Vercel is UTC), so employees can't backdate punches.
+ */
+export function todayKeyInTz(tz: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  } catch {
+    return dateKey(new Date());
+  }
+}
+
 /** Count of working days (Mon-Sat, Sunday off) in a "YYYY-MM" month. */
 export function workingDaysInMonth(periodMonth: string): number {
   const [y, m] = periodMonth.split("-").map(Number);

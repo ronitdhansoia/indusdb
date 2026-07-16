@@ -2,13 +2,18 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
 import { requireAuth } from "@/lib/guards";
-import { dateKey } from "@/lib/utils";
+import { todayKeyInTz } from "@/lib/utils";
 
 type Ctx = { params: Promise<{ id: string }> };
 
+// Business timezone used to decide "today" for punch-ins.
+const BUSINESS_TZ = process.env.BUSINESS_TZ || "Asia/Dubai";
+
 // POST /api/tasks/[id]/punch
 // Toggle a working-day punch for a daily-punch task.
-// Body: { date?: "YYYY-MM-DD" } (defaults to today). Owner employee or admin.
+// - Employees may only punch for the CURRENT day (no backdating / pre-punching).
+// - Admins may toggle any working day in the period (for corrections).
+// Body: { date?: "YYYY-MM-DD" }.
 export async function POST(req: Request, { params }: Ctx) {
   const auth = await requireAuth();
   if ("error" in auth) return auth.error;
@@ -35,10 +40,32 @@ export async function POST(req: Request, { params }: Ctx) {
       );
     }
 
-    const date =
+    const today = todayKeyInTz(BUSINESS_TZ);
+    const requested =
       typeof body.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date)
         ? body.date
-        : dateKey(new Date());
+        : undefined;
+
+    // Employees may only punch for today. Admins may adjust any day.
+    let date: string;
+    if (isAdmin) {
+      date = requested ?? today;
+    } else {
+      if (requested && requested !== today) {
+        return NextResponse.json(
+          { error: "You can only punch in for today." },
+          { status: 403 }
+        );
+      }
+      date = today;
+      // Once the payment is settled, the period is locked for employees.
+      if (task.status === "done") {
+        return NextResponse.json(
+          { error: "This payment period is closed." },
+          { status: 400 }
+        );
+      }
+    }
 
     // Must fall in this task's period month.
     if (!date.startsWith(task.periodMonth)) {
