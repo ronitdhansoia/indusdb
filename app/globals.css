@@ -1,26 +1,167 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   Indus Tracker — design tokens
+   A warm, minimal, editorial palette. Clay accent over soft paper neutrals.
+--------------------------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --bg: #faf8f5;
+  --surface: #ffffff;
+  --surface-2: #f4f1ec;
+  --border: #eae4db;
+  --border-strong: #ddd5c9;
+  --text: #1c1a17;
+  --muted: #78716a;
+  --faint: #a8a096;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --accent: #bd5d3a;
+  --accent-hover: #a94f2f;
+  --accent-fg: #ffffff;
+  --accent-soft: #f8ece5;
+
+  --ring: #bd5d3a3d;
+
+  /* status hues */
+  --todo: #8a8378;
+  --todo-soft: #f0ede8;
+  --progress: #b7791f;
+  --progress-soft: #fbf1dc;
+  --done: #3f7d52;
+  --done-soft: #e6f1e9;
+  --danger: #c0492f;
+  --danger-soft: #f9e7e2;
+
+  --shadow-sm: 0 1px 2px rgba(28, 26, 23, 0.05);
+  --shadow-md: 0 4px 16px -4px rgba(28, 26, 23, 0.1);
+  --shadow-lg: 0 24px 48px -16px rgba(28, 26, 23, 0.18);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #14120f;
+    --surface: #1d1b17;
+    --surface-2: #26231e;
+    --border: #302b25;
+    --border-strong: #3d372f;
+    --text: #f1ede7;
+    --muted: #a49c90;
+    --faint: #736c62;
+
+    --accent: #db7a53;
+    --accent-hover: #e78a64;
+    --accent-fg: #1a120d;
+    --accent-soft: #2c211a;
+
+    --ring: #db7a5340;
+
+    --todo: #9c948a;
+    --todo-soft: #272420;
+    --progress: #d8a54a;
+    --progress-soft: #2c2417;
+    --done: #6fae82;
+    --done-soft: #1c2820;
+    --danger: #e07a63;
+    --danger-soft: #2c1c18;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 24px 48px -16px rgba(0, 0, 0, 0.6);
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-todo: var(--todo);
+  --color-todo-soft: var(--todo-soft);
+  --color-progress: var(--progress);
+  --color-progress-soft: var(--progress-soft);
+  --color-done: var(--done);
+  --color-done-soft: var(--done-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-lg: 0.9rem;
+  --radius-xl: 1.15rem;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  letter-spacing: -0.011em;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+/* Focus ring */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 3px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--faint);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise {
+  animation: rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-fade {
+  animation: fade 0.2s ease both;
 }
