@@ -185,6 +185,10 @@ export default function TasksPage() {
     }
   }
 
+  function updatePunches(id: string, punches: string[]) {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, punches } : t)));
+  }
+
   async function remove() {
     if (!confirmDelete) return;
     const id = confirmDelete.id;
@@ -280,6 +284,9 @@ export default function TasksPage() {
               onStatusChange={(s) => changeStatus(t, s)}
               onEdit={() => openEdit(t)}
               onDelete={() => setConfirmDelete(t)}
+              showPunch
+              punchEditable
+              onPunchUpdated={(p) => updatePunches(t.id, p)}
             />
           ))}
         </div>

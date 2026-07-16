@@ -50,6 +50,10 @@ export default function EmployeeTasks() {
     }
   }
 
+  function updatePunches(id: string, punches: string[]) {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, punches } : t)));
+  }
+
   const grouped = useMemo(() => {
     return {
       todo: tasks.filter((t) => t.status === "todo"),
@@ -110,6 +114,9 @@ export default function EmployeeTasks() {
                       task={t}
                       busy={busyId === t.id}
                       onStatusChange={(s) => changeStatus(t, s)}
+                      showPunch
+                      punchEditable
+                      onPunchUpdated={(p) => updatePunches(t.id, p)}
                     />
                   ))
                 )}

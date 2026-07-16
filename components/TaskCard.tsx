@@ -10,6 +10,7 @@ import {
 } from "@/lib/utils";
 import { Avatar, Badge } from "./ui";
 import { StatusControl } from "./StatusControl";
+import { PunchTracker } from "./PunchTracker";
 import { Calendar, Flag, Pencil, Trash, Repeat } from "./icons";
 
 const priorityBar: Record<string, string> = {
@@ -25,6 +26,9 @@ export function TaskCard({
   onEdit,
   onDelete,
   busy,
+  showPunch = false,
+  punchEditable = false,
+  onPunchUpdated,
 }: {
   task: TaskDTO;
   showAssignee?: boolean;
@@ -32,6 +36,9 @@ export function TaskCard({
   onEdit?: () => void;
   onDelete?: () => void;
   busy?: boolean;
+  showPunch?: boolean;
+  punchEditable?: boolean;
+  onPunchUpdated?: (punches: string[]) => void;
 }) {
   const due = relativeDue(task.dueDate);
   const dueTone =
@@ -137,6 +144,14 @@ export function TaskCard({
               disabled={busy}
             />
           </div>
+        )}
+
+        {showPunch && task.dailyPunch && (
+          <PunchTracker
+            task={task}
+            editable={punchEditable}
+            onUpdated={(punches) => onPunchUpdated?.(punches)}
+          />
         )}
       </div>
     </div>
