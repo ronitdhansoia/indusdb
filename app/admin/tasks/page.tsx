@@ -42,6 +42,7 @@ type FormState = {
   status: TaskStatus;
   recurrence: Recurrence;
   recurrenceDay: number;
+  dailyPunch: boolean;
 };
 
 const emptyForm: FormState = {
@@ -54,6 +55,7 @@ const emptyForm: FormState = {
   status: "todo",
   recurrence: "none",
   recurrenceDay: 0,
+  dailyPunch: false,
 };
 
 const statusFilters: { value: "all" | TaskStatus; label: string }[] = [
@@ -125,6 +127,7 @@ export default function TasksPage() {
       status: t.status,
       recurrence: t.recurrence,
       recurrenceDay: t.recurrenceDay,
+      dailyPunch: t.dailyPunch,
     });
     setError("");
     setModalOpen(true);
@@ -143,6 +146,7 @@ export default function TasksPage() {
         amount: form.amount ? Number(form.amount) : 0,
         recurrence: form.recurrence,
         recurrenceDay: form.recurrenceDay,
+        dailyPunch: form.recurrence === "monthly" ? form.dailyPunch : false,
         // For recurring tasks the server derives the due date from the schedule.
         dueDate: form.recurrence === "none" ? form.dueDate || null : undefined,
         ...(editing ? { status: form.status } : {}),
@@ -369,6 +373,7 @@ export default function TasksPage() {
                     ...form,
                     recurrence: r,
                     recurrenceDay: r === "weekly" ? 5 : 0,
+                    dailyPunch: r === "monthly",
                   });
                 }}
               >
@@ -428,6 +433,26 @@ export default function TasksPage() {
                   </div>
                 </Field>
               </div>
+              {form.recurrence === "monthly" && (
+                <label className="mt-3 flex items-start gap-2.5 text-sm text-text">
+                  <input
+                    type="checkbox"
+                    checked={form.dailyPunch}
+                    onChange={(e) =>
+                      setForm({ ...form, dailyPunch: e.target.checked })
+                    }
+                    className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
+                  />
+                  <span>
+                    Requires daily punch-in
+                    <span className="block text-xs font-normal text-muted">
+                      The employee marks the task done each working day (Sundays
+                      off) to earn the month&apos;s pay.
+                    </span>
+                  </span>
+                </label>
+              )}
+
               <p className="mt-2.5 text-xs text-muted">
                 {describeRecurrence(form.recurrence, form.recurrenceDay)}. When
                 this payment is marked done, the next one is created
