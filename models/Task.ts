@@ -15,6 +15,7 @@ export interface ITask {
   recurrenceDay: number; // monthly: 0 = end of month, 1-28 = day; weekly: 1-6 = Mon-Sat
   dailyPunch: boolean; // employee must punch in daily during the period
   periodMonth: string; // "YYYY-MM" the punches belong to (for daily-punch tasks)
+  periodStart: string; // "YYYY-MM-DD" first day of the punch period (creation day)
   punches: string[]; // "YYYY-MM-DD" working days the employee marked done
   assignedTo: mongoose.Types.ObjectId; // employee
   assignedBy: mongoose.Types.ObjectId; // admin
@@ -49,6 +50,7 @@ const TaskSchema = new Schema<ITask>(
     recurrenceDay: { type: Number, default: 0 },
     dailyPunch: { type: Boolean, default: false },
     periodMonth: { type: String, default: "" },
+    periodStart: { type: String, default: "" },
     punches: { type: [String], default: [] },
     assignedTo: {
       type: Schema.Types.ObjectId,

@@ -8,6 +8,7 @@ import {
   dateKey,
   monthLabel,
   punchProgress,
+  periodRange,
   formatMoney,
 } from "@/lib/utils";
 import { Check, Repeat } from "./icons";
@@ -31,14 +32,20 @@ export function PunchTracker({
   const prog = punchProgress(task);
   if (!prog) return null;
 
-  const [y, m] = task.periodMonth.split("-").map(Number);
+  const range = periodRange(task);
+  // Show the pay month; fall back to the start's month.
+  const monthRef = task.periodMonth || (range?.start ?? "").slice(0, 7);
+  const [y, m] = monthRef.split("-").map(Number);
   const daysInMonth = new Date(y, m, 0).getDate();
   const firstWeekday = (new Date(y, m - 1, 1).getDay() + 6) % 7; // Mon-first
 
   const today = new Date();
   const todayKey = dateKey(today);
   const todayInPeriod =
-    todayKey.startsWith(task.periodMonth) && today.getDay() !== 0;
+    !!range &&
+    todayKey >= range.start &&
+    todayKey <= range.end &&
+    today.getDay() !== 0;
   const punchedToday = task.punches.includes(todayKey);
   const settled = task.status === "done";
   const earned = Math.round((task.amount * prog.done) / (prog.total || 1));
@@ -149,23 +156,25 @@ export function PunchTracker({
               const dt = new Date(y, m - 1, day);
               const key = dateKey(dt);
               const isSun = dt.getDay() === 0;
+              const inPeriod =
+                !!range && key >= range.start && key <= range.end && !isSun;
               const punched = task.punches.includes(key);
               const isToday = key === todayKey;
               return (
                 <button
                   key={day}
-                  disabled={isSun || !canEditAny || busy}
-                  onClick={() => canEditAny && toggle(key)}
-                  title={isSun ? "Off day" : key}
+                  disabled={!inPeriod || !canEditAny || busy}
+                  onClick={() => canEditAny && inPeriod && toggle(key)}
+                  title={isSun ? "Off day" : inPeriod ? key : "Before task start"}
                   className={cn(
                     "flex h-7 items-center justify-center rounded-md text-[11px] font-medium transition-all",
-                    isSun
-                      ? "cursor-default bg-transparent text-faint/50"
+                    !inPeriod
+                      ? "cursor-default bg-transparent text-faint/40"
                       : punched
                         ? "bg-accent text-accent-fg"
                         : "bg-surface text-muted",
-                    canEditAny && !isSun && "cursor-pointer hover:bg-accent-soft",
-                    isToday && !punched && "ring-1 ring-accent"
+                    canEditAny && inPeriod && "cursor-pointer hover:bg-accent-soft",
+                    isToday && inPeriod && !punched && "ring-1 ring-accent"
                   )}
                 >
                   {day}

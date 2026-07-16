@@ -3,9 +3,17 @@ import { connectDB } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
 import { User } from "@/models/User";
 import { requireAuth } from "@/lib/guards";
-import { nextPaymentDate, normalizeRecurrence, monthKey } from "@/lib/utils";
+import {
+  nextPaymentDate,
+  normalizeRecurrence,
+  monthKey,
+  dateKey,
+  todayKeyInTz,
+} from "@/lib/utils";
 
 type Ctx = { params: Promise<{ id: string }> };
+
+const BUSINESS_TZ = process.env.BUSINESS_TZ || "Asia/Dubai";
 
 // PATCH /api/tasks/[id]
 // - Admin: may edit any field (title, description, priority, dueDate, assignedTo, status)
@@ -68,9 +76,14 @@ export async function PATCH(req: Request, { params }: Ctx) {
         if (rec.recurrence !== "monthly") task.dailyPunch = false;
       }
       if (body.dailyPunch !== undefined) {
+        const wasPunch = task.dailyPunch;
         task.dailyPunch = task.recurrence === "monthly" && Boolean(body.dailyPunch);
         if (task.dailyPunch && task.dueDate) {
           task.periodMonth = monthKey(new Date(task.dueDate));
+          // Start the punch period today when turning it on.
+          if (!wasPunch || !task.periodStart) {
+            task.periodStart = todayKeyInTz(BUSINESS_TZ);
+          }
         }
       }
       if (body.dueDate !== undefined) {
@@ -115,6 +128,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
         recurrenceDay: task.recurrenceDay,
         dailyPunch: task.dailyPunch,
         periodMonth: task.dailyPunch && next ? monthKey(next) : "",
+        // The new period begins the day after the one just paid.
+        periodStart: task.dailyPunch ? dateKey(from) : "",
         punches: [], // fresh period starts with no punches
         assignedTo: task.assignedTo,
         assignedBy: task.assignedBy,
@@ -138,6 +153,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
       recurrenceDay?: number;
       dailyPunch?: boolean;
       periodMonth?: string;
+      periodStart?: string;
       punches?: string[];
       assignedTo?: { _id: unknown; name: string } | null;
       dueDate?: Date | null;
@@ -159,6 +175,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
         recurrenceDay: t.recurrenceDay ?? 0,
         dailyPunch: t.dailyPunch ?? false,
         periodMonth: t.periodMonth ?? "",
+        periodStart: t.periodStart ?? "",
         punches: t.punches ?? [],
         assignedTo: t.assignedTo
           ? { id: String(t.assignedTo._id), name: t.assignedTo.name }

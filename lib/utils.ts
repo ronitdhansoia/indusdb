@@ -232,16 +232,56 @@ export function monthLabel(periodMonth: string): string {
   });
 }
 
-/** Punch progress for a daily-punch task: days done vs working days in its month. */
-export function punchProgress(task: {
+type PunchTask = {
   dailyPunch?: boolean;
+  periodStart?: string;
   periodMonth?: string;
+  dueDate?: string | Date | null;
   punches?: string[];
-}): { done: number; total: number; pct: number } | null {
-  if (!task.dailyPunch || !task.periodMonth) return null;
-  const total = workingDaysInMonth(task.periodMonth);
-  const done = (task.punches ?? []).filter((p) =>
-    p.startsWith(task.periodMonth!)
+};
+
+/** Count of working days (Mon-Sat) in the inclusive range [startKey, endKey]. */
+export function workingDaysBetween(startKey: string, endKey: string): number {
+  const [sy, sm, sd] = startKey.split("-").map(Number);
+  const [ey, em, ed] = endKey.split("-").map(Number);
+  const end = new Date(ey, em - 1, ed);
+  let count = 0;
+  for (const d = new Date(sy, sm - 1, sd); d <= end; d.setDate(d.getDate() + 1)) {
+    if (d.getDay() !== 0) count++;
+  }
+  return count;
+}
+
+/**
+ * The punch period for a daily-punch task: [start, end] as "YYYY-MM-DD".
+ * Start defaults to the day the task began (periodStart); end is the pay date.
+ * Falls back to the whole month for older tasks without a periodStart.
+ */
+export function periodRange(
+  task: PunchTask
+): { start: string; end: string } | null {
+  const start =
+    task.periodStart || (task.periodMonth ? `${task.periodMonth}-01` : "");
+  let end = "";
+  if (task.dueDate) end = dateKey(new Date(task.dueDate));
+  else if (task.periodMonth) {
+    const [y, m] = task.periodMonth.split("-").map(Number);
+    end = `${task.periodMonth}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
+  }
+  if (!start || !end || end < start) return null;
+  return { start, end };
+}
+
+/** Punch progress: days done vs working days in the period (start -> pay date). */
+export function punchProgress(
+  task: PunchTask
+): { done: number; total: number; pct: number } | null {
+  if (!task.dailyPunch) return null;
+  const range = periodRange(task);
+  if (!range) return null;
+  const total = workingDaysBetween(range.start, range.end);
+  const done = (task.punches ?? []).filter(
+    (p) => p >= range.start && p <= range.end
   ).length;
   return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
 }
@@ -258,6 +298,7 @@ export function taskOccurrencesInMonth(
     recurrence: Recurrence;
     recurrenceDay: number;
     dailyPunch?: boolean;
+    periodStart?: string;
     periodMonth?: string;
     dueDate?: string | Date | null;
   },
@@ -270,9 +311,19 @@ export function taskOccurrencesInMonth(
   const key = (d: number) => `${mk}-${pad(d)}`;
   const out: string[] = [];
 
-  if (task.dailyPunch && task.periodMonth === mk) {
-    for (let d = 1; d <= daysInMonth; d++) {
-      if (new Date(year, month - 1, d).getDay() !== 0) out.push(key(d));
+  if (task.dailyPunch) {
+    const range = periodRange(task);
+    if (range) {
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dk = key(d);
+        if (
+          dk >= range.start &&
+          dk <= range.end &&
+          new Date(year, month - 1, d).getDay() !== 0
+        ) {
+          out.push(dk);
+        }
+      }
     }
     return out;
   }

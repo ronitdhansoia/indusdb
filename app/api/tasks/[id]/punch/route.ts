@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import { Task } from "@/models/Task";
 import { requireAuth } from "@/lib/guards";
-import { todayKeyInTz } from "@/lib/utils";
+import { todayKeyInTz, periodRange } from "@/lib/utils";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -67,8 +67,9 @@ export async function POST(req: Request, { params }: Ctx) {
       }
     }
 
-    // Must fall in this task's period month.
-    if (!date.startsWith(task.periodMonth)) {
+    // Must fall within this task's punch period (creation day -> pay date).
+    const range = periodRange(task);
+    if (!range || date < range.start || date > range.end) {
       return NextResponse.json(
         { error: "That day is outside this payment period." },
         { status: 400 }

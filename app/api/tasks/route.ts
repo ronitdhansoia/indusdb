@@ -8,8 +8,11 @@ import {
   nextPaymentDate,
   normalizeRecurrence,
   monthKey,
+  todayKeyInTz,
   type Recurrence,
 } from "@/lib/utils";
+
+const BUSINESS_TZ = process.env.BUSINESS_TZ || "Asia/Dubai";
 
 type LeanTask = {
   _id: mongoose.Types.ObjectId;
@@ -22,6 +25,7 @@ type LeanTask = {
   recurrenceDay?: number;
   dailyPunch?: boolean;
   periodMonth?: string;
+  periodStart?: string;
   punches?: string[];
   assignedTo?: { _id: mongoose.Types.ObjectId; name: string } | null;
   dueDate?: Date | null;
@@ -42,6 +46,7 @@ function serializeTask(t: LeanTask) {
     recurrenceDay: t.recurrenceDay ?? 0,
     dailyPunch: t.dailyPunch ?? false,
     periodMonth: t.periodMonth ?? "",
+    periodStart: t.periodStart ?? "",
     punches: t.punches ?? [],
     assignedTo: t.assignedTo
       ? { id: String(t.assignedTo._id), name: t.assignedTo.name }
@@ -149,6 +154,8 @@ export async function POST(req: Request) {
       recurrenceDay: rec.recurrenceDay,
       dailyPunch: punchOn,
       periodMonth: punchOn && resolvedDue ? monthKey(resolvedDue) : "",
+      // Punch period starts the day the task is created.
+      periodStart: punchOn ? todayKeyInTz(BUSINESS_TZ) : "",
       punches: [],
       dueDate: resolvedDue,
     });
