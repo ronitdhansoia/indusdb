@@ -21,13 +21,13 @@ type NavItem = {
 const NAVS: Record<Role, NavItem[]> = {
   admin: [
     { href: "/admin", label: "Dashboard", icon: Dashboard },
-    { href: "/admin/daily", label: "Daily", icon: Calendar },
+    { href: "/admin/daily", label: "Calendar", icon: Calendar },
     { href: "/admin/employees", label: "Employees", icon: Users },
     { href: "/admin/tasks", label: "Tasks", icon: Tasks },
   ],
   employee: [
     { href: "/employee", label: "My Tasks", icon: Tasks },
-    { href: "/employee/daily", label: "Daily", icon: Calendar },
+    { href: "/employee/daily", label: "Calendar", icon: Calendar },
     { href: "/employee/checklist", label: "Checklist", icon: Check },
   ],
 };
